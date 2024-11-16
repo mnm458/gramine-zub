@@ -1,47 +1,47 @@
 # Copyright (C) 2023 Gramine contributors
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Change the entrypoint to the container path
-libos.entrypoint = "/bin/bash"
+# Using Jinja2 template syntax for Gramine paths
+libos.entrypoint = "{{ gramine.libos }}"
 
-# Adjust library paths for container environment
-loader.env.LD_LIBRARY_PATH = "/lib:/lib/x86_64-linux-gnu:/usr/lib:/usr/lib/x86_64-linux-gnu"
+# Adjust library paths with template variables
+loader.env.LD_LIBRARY_PATH = "/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
 loader.env.PATH = "/bin:/usr/bin"
 loader.insecure__use_cmdline_argv = true
 
-# Mount points adjusted for container filesystem
+# Mount points using template variables
 fs.mounts = [
-   { path = "/lib", uri = "file:/lib" },
-   { path = "/lib/x86_64-linux-gnu", uri = "file:/lib/x86_64-linux-gnu" },
+   { path = "/lib", uri = "file:{{ gramine.runtimedir() }}" },
+   { path = "{{ arch_libdir }}", uri = "file:{{ arch_libdir }}" },
    { path = "/usr/lib", uri = "file:/usr/lib" },
-   { path = "/usr/lib/x86_64-linux-gnu", uri = "file:/usr/lib/x86_64-linux-gnu" },
+   { path = "{{ arch_libdir }}", uri = "file:{{ arch_libdir }}" },
    { path = "/bin", uri = "file:/bin" },
    { path = "/usr/bin", uri = "file:/usr/bin" },
    { path = "/tmp", uri = "file:/tmp" },
-   { path = "/scripts", uri = "file:/app/scripts" },  # Assuming scripts will be in /app/scripts in container
-   { path = "/home/user/.cargo", uri = "file:/home/user/.cargo" }  # Adjust user directory as needed
+   { path = "/scripts", uri = "file:/app/scripts" },
+   { path = "/home/user/.cargo", uri = "file:/home/user/.cargo" }
 ]
 
-# Keep debug mode for development
+# SGX configurations
 sgx.debug = true
-sgx.edmm_enable = false  # You can make this configurable via build arg if needed
+sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 sgx.enclave_size = "8G"
 sgx.max_threads = 16
 
-# Adjust trusted files paths for container
+# Trusted files using template variables
 sgx.trusted_files = [
+  "file:{{ gramine.libos }}",
+  "file:{{ gramine.runtimedir() }}/",
+  "file:{{ arch_libdir }}/",
+  "file:/usr{{ arch_libdir }}/",
   "file:/bin/",
   "file:/usr/bin/",
-  "file:/lib/",
-  "file:/lib/x86_64-linux-gnu/",
-  "file:/usr/lib/",
-  "file:/usr/lib/x86_64-linux-gnu/",
   "file:/app/scripts/fibonacci",
   "file:/app/scripts/riscv32im-succinct-zkvm-elf",
   "file:/app/scripts/bash_test.sh"
 ]
 
-# Adjust allowed files paths for container
+# Allowed files
 sgx.allowed_files = [
    "file:/app/scripts/",
    "file:/dev/stdout",
