@@ -1,0 +1,17 @@
+# Use a supported base image
+FROM ubuntu:20.04
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y \
+    libprotobuf-c1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a directory for your application
+WORKDIR /app
+
+# Copy your binary and any dependencies
+COPY ./your_binary /app/your_binary
+COPY ./your_binary.manifest /app/your_binary.manifest
+
+# Make sure the binary is executable
+RUN chmod +x /app/your_binary
